@@ -41,6 +41,11 @@ class Table
 	public $sequence;
 
 	/**
+	 * Whether to cache individual models or not (not to be confused with caching of table schemas).
+	 */
+	public $cache_model;
+
+	/**
 	 * A instance of CallBack for this model/table
 	 * @static
 	 * @var object ActiveRecord\CallBack
@@ -83,6 +88,7 @@ class Table
 		$this->set_primary_key();
 		$this->set_sequence_name();
 		$this->set_delegates();
+		$this->set_cache();
 		$this->set_setters_and_getters();
 
 		$this->callback = new CallBack($class_name);
@@ -209,6 +215,13 @@ class Table
 		return $this->find_by_sql($sql->to_s(),$sql->get_where_values(), $readonly, $eager_load);
 	}
 
+	public function cache_key_for_model($pk){
+		if(!is_array($pk)){
+			$pk = array($pk);
+		}
+		return $this->class->name."-".implode("-",$pk);
+	}
+
 	public function find_by_sql($sql, $values=null, $readonly=false, $includes=null)
 	{
 		$this->last_sql = $sql;
@@ -217,9 +230,19 @@ class Table
 		$list = $attrs = array();
 		$sth = $this->conn->query($sql,$this->process_data($values));
 
+		$self = $this;
 		while (($row = $sth->fetch()))
 		{
-			$model = new $this->class->name($row,false,true,false);
+			$cb = function() use ($row, $self) {
+				return new $self->class->name($row,false,true,false);
+			};
+			if($this->cache_model){
+				$key = $this->cache_key_for_model(array_intersect_key($row, array_flip($this->pk)));
+				$model = Cache::get($key, $cb );
+			}
+			else{
+				$model = $cb();
+			}
 
 			if ($readonly)
 				$model->readonly();
@@ -292,7 +315,7 @@ class Table
 	 * @param $name string name of Relationship
 	 * @param $strict bool
 	 * @throws RelationshipException
-	 * @return HasOne|HasMany|BelongsTo Relationship or null
+	 * @return Relationship or null
 	 */
 	public function get_relationship($name, $strict=false)
 	{
@@ -443,6 +466,19 @@ class Table
 
 		if(($db = $this->class->getStaticPropertyValue('db',null)) || ($db = $this->class->getStaticPropertyValue('db_name',null)))
 			$this->db_name = $db;
+	}
+
+	private function set_cache()
+	{
+		if (!Cache::$adapter)
+			return;
+
+		try{
+			$this->cache_model = $this->class->getStaticPropertyValue('cache_model');
+		}
+		catch (\ReflectionException $e){
+			$this->cache_model = false;
+		}
 	}
 
 	private function set_sequence_name()
