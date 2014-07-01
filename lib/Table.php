@@ -316,7 +316,6 @@ class Table
 	 * @param $strict bool
 	 * @throws RelationshipException
 	 * @return HasOne|HasMany|BelongsTo Relationship or null
-	 * @return Relationship or null
 	 */
 	public function get_relationship($name, $strict=false)
 	{
