@@ -59,15 +59,22 @@ class Cache
 			static::$adapter->flush();
 	}
 
-	public static function get($key, $closure)
+    /**
+     * Attempt to retrieve a value from cache using a key. If the value is not found, then the closure method
+     * will be invoked, and the result will be stored in cache using that key.
+     * @param $key
+     * @param $closure
+     * @return mixed
+     */
+    public static function get($key, $closure, $expire=0)
 	{
 		$key = static::get_namespace() . $key;
-		
+
 		if (!static::$adapter)
 			return $closure();
         
 		if (!($value = static::$adapter->read($key)))
-			static::$adapter->write($key,($value = $closure()),static::$options['expire']);
+			static::$adapter->write($key,($value = $closure()),$expire);
 
 		return $value;
 	}

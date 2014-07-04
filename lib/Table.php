@@ -45,6 +45,11 @@ class Table
 	 */
 	public $cache_model;
 
+    /**
+     * Expiration period for model caching.
+     */
+    public $cache_model_expire;
+
 	/**
 	 * A instance of CallBack for this model/table
 	 * @static
@@ -238,7 +243,7 @@ class Table
 			};
 			if($this->cache_model){
 				$key = $this->cache_key_for_model(array_intersect_key($row, array_flip($this->pk)));
-				$model = Cache::get($key, $cb );
+				$model = Cache::get($key, $cb, $this->cache_model_expire );
 			}
 			else{
 				$model = $cb();
@@ -315,7 +320,7 @@ class Table
 	 * @param $name string name of Relationship
 	 * @param $strict bool
 	 * @throws RelationshipException
-	 * @return Relationship or null
+	 * @return HasOne|HasMany|BelongsTo Relationship or null
 	 */
 	public function get_relationship($name, $strict=false)
 	{
@@ -390,7 +395,7 @@ class Table
 
 		$table_name = $this->get_fully_qualified_table_name($quote_name);
 		$conn = $this->conn;
-		$this->columns = Cache::get("get_meta_data-$table_name", function() use ($conn, $table_name) { return $conn->columns($table_name); });
+		$this->columns = Cache::get("get_meta_data-$table_name", function() use ($conn, $table_name) { return $conn->columns($table_name); }, Cache::$options['expire']);
 	}
 
 	/**
@@ -473,12 +478,9 @@ class Table
 		if (!Cache::$adapter)
 			return;
 
-		try{
-			$this->cache_model = $this->class->getStaticPropertyValue('cache_model');
-		}
-		catch (\ReflectionException $e){
-			$this->cache_model = false;
-		}
+		$model_class_name = $this->class->name;
+		$this->cache_model = $model_class_name::$cache;
+		$this->cache_model_expire =  property_exists($model_class_name, 'cache_expire') && isset($model_class_name::$cache_expire)? $model_class_name::$cache_expire:Cache::$options['expire'];
 	}
 
 	private function set_sequence_name()
