@@ -29,12 +29,12 @@ class CacheModelTest extends DatabaseTest
 
 	public function test_default_expire()
 	{
-		$this->assert_equals(86400,Author::$cache_expire);
+		$this->assert_equals(30,Author::table()->cache_model_expire);
 	}
 
-	public function test_explicit_default_expire()
+	public function test_explicit_expire()
 	{
-		$this->assert_equals(2592000,Publisher::$cache_expire);
+		$this->assert_equals(2592000,Publisher::table()->cache_model_expire);
 	}
 
     public function test_cache_key(){

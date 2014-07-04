@@ -158,8 +158,14 @@ class Model
 	 */
 	static $cache = false;
 
-    static $cache_expire = 86400; // 1 day. 60 * 60 * 24
-	
+
+    /**
+     * Set this to specify an expiration period for this model. If not set, the expire value you set in your cache options will be used.
+     *
+     * @var number
+     */
+    static $cache_expire;
+
 	/**
 	 * Allows you to create aliases for attributes.
 	 *
@@ -883,7 +889,7 @@ class Model
 	protected function update_cache(){
 		$table = static::table();
 		if($table->cache_model){
-			Cache::set($this->cache_key(), $this, static::$cache_expire);
+			Cache::set($this->cache_key(), $this, $table->cache_model_expire);
 		}
 	}
 
@@ -1626,7 +1632,7 @@ class Model
 				$list[] = Cache::get($table->cache_key_for_model($pk), function() use ($table, $options){
 					$res = $table->find($options);
 					return $res?$res[0]:null;
-				}, static::$cache_expire);
+				}, $table->cache_model_expire);
 			}
 			$list = array_filter($list);
 		}

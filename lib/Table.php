@@ -45,6 +45,11 @@ class Table
 	 */
 	public $cache_model;
 
+    /**
+     * Expiration period for model caching.
+     */
+    public $cache_model_expire;
+
 	/**
 	 * A instance of CallBack for this model/table
 	 * @static
@@ -238,8 +243,7 @@ class Table
 			};
 			if($this->cache_model){
 				$key = $this->cache_key_for_model(array_intersect_key($row, array_flip($this->pk)));
-                $className = $self->class->name;
-				$model = Cache::get($key, $cb, $className::$cache_expire );
+				$model = Cache::get($key, $cb, $this->cache_model_expire );
 			}
 			else{
 				$model = $cb();
@@ -476,6 +480,7 @@ class Table
 
         $model_class_name = $this->class->name;
 		$this->cache_model = $model_class_name::$cache;
+        $this->cache_model_expire =  property_exists($model_class_name, 'cache_expire') && isset($model_class_name::$cache_expire)? $model_class_name::$cache_expire:Cache::$options['expire'];
 	}
 
 	private function set_sequence_name()
