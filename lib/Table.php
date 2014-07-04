@@ -238,7 +238,8 @@ class Table
 			};
 			if($this->cache_model){
 				$key = $this->cache_key_for_model(array_intersect_key($row, array_flip($this->pk)));
-				$model = Cache::get($key, $cb );
+                $className = $self->class->name;
+				$model = Cache::get($key, $cb, $className::$cache_expire );
 			}
 			else{
 				$model = $cb();
@@ -390,7 +391,7 @@ class Table
 
 		$table_name = $this->get_fully_qualified_table_name($quote_name);
 		$conn = $this->conn;
-		$this->columns = Cache::get("get_meta_data-$table_name", function() use ($conn, $table_name) { return $conn->columns($table_name); });
+		$this->columns = Cache::get("get_meta_data-$table_name", function() use ($conn, $table_name) { return $conn->columns($table_name); }, Cache::$options['expire']);
 	}
 
 	/**
@@ -470,13 +471,16 @@ class Table
 
 	private function set_cache()
 	{
-		if (!Cache::$adapter)
+
+        if (!Cache::$adapter)
 			return;
 
 		try{
-			$this->cache_model = $this->class->getStaticPropertyValue('cache_model');
+			$this->cache_model = $this->class->getStaticPropertyValue('cache');
 		}
 		catch (\ReflectionException $e){
+
+            echo "Table::whoops";
 			$this->cache_model = false;
 		}
 	}

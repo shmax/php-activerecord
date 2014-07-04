@@ -21,7 +21,7 @@ class CacheTest extends SnakeCase_PHPUnit_Framework_TestCase
 
 	private function cache_get()
 	{
-		return Cache::get("1337", function() { return "abcd"; });
+		return Cache::get("1337", function() { return "abcd"; },Cache::$options['expire']);
 	}
 
 	public function test_initialize()
@@ -49,7 +49,7 @@ class CacheTest extends SnakeCase_PHPUnit_Framework_TestCase
 	public function test_get_does_not_execute_closure_on_cache_hit()
 	{
 		$this->cache_get();
-		Cache::get("1337", function() { throw new Exception("I better not execute!"); });
+		Cache::get("1337", function() { throw new Exception("I better not execute!"); }, Cache::$options['expire']);
 	}
 
 	public function test_cache_adapter_returns_false_on_cache_miss()

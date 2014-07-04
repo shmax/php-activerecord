@@ -154,9 +154,11 @@ class Model
 	static $sequence;
 
 	/**
-	 * Set this to true to use caching for this model. Note that you must also configure a cache object.
+	 * Set this to true in your subclass to use caching for this model. Note that you must also configure a cache object.
 	 */
-	static $cache;
+	static $cache = false;
+
+    static $cache_expire = 86400; // 1 day. 60 * 60 * 24
 	
 	/**
 	 * Allows you to create aliases for attributes.
@@ -839,6 +841,8 @@ class Model
 
 		$this->__new_record = false;
 		$this->invoke_callback('after_create',false);
+
+        $this->update_cache();
 		return true;
 	}
 
@@ -869,10 +873,9 @@ class Model
 			$dirty = $this->dirty_attributes();
 			static::table()->update($dirty,$pk);
 
-			$this->update_cache();
-
 			$this->invoke_callback('after_update',false);
-		}
+            $this->update_cache();
+        }
 
 		return true;
 	}
@@ -880,7 +883,7 @@ class Model
 	protected function update_cache(){
 		$table = static::table();
 		if($table->cache_model){
-			Cache::set($this->cache_key(), $this, 0);
+			Cache::set($this->cache_key(), $this, static::$cache_expire);
 		}
 	}
 
@@ -1617,13 +1620,13 @@ class Model
 		$table = static::table();
 
 		if($table->cache_model){
-			$pks=is_array($values)?$values:array($values);
+            $pks=is_array($values)?$values:array($values);
 			foreach($pks as $pk){
 				$options['conditions'] = static::pk_conditions($pk);
 				$list[] = Cache::get($table->cache_key_for_model($pk), function() use ($table, $options){
 					$res = $table->find($options);
 					return $res?$res[0]:null;
-				});
+				}, static::$cache_expire);
 			}
 			$list = array_filter($list);
 		}
