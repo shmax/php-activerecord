@@ -471,18 +471,11 @@ class Table
 
 	private function set_cache()
 	{
-
         if (!Cache::$adapter)
 			return;
 
-		try{
-			$this->cache_model = $this->class->getStaticPropertyValue('cache');
-		}
-		catch (\ReflectionException $e){
-
-            echo "Table::whoops";
-			$this->cache_model = false;
-		}
+        $model_class_name = $this->class->name;
+		$this->cache_model = $model_class_name::$cache;
 	}
 
 	private function set_sequence_name()
