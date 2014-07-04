@@ -475,12 +475,12 @@ class Table
 
 	private function set_cache()
 	{
-        if (!Cache::$adapter)
+		if (!Cache::$adapter)
 			return;
 
-        $model_class_name = $this->class->name;
+		$model_class_name = $this->class->name;
 		$this->cache_model = $model_class_name::$cache;
-        $this->cache_model_expire =  property_exists($model_class_name, 'cache_expire') && isset($model_class_name::$cache_expire)? $model_class_name::$cache_expire:Cache::$options['expire'];
+		$this->cache_model_expire =  property_exists($model_class_name, 'cache_expire') && isset($model_class_name::$cache_expire)? $model_class_name::$cache_expire:Cache::$options['expire'];
 	}
 
 	private function set_sequence_name()
