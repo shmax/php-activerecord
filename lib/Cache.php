@@ -72,16 +72,20 @@ class Cache
 
 		if (!static::$adapter)
 			return $closure();
-        
+
 		if (!($value = static::$adapter->read($key)))
 			static::$adapter->write($key,($value = $closure()),$expire);
 
 		return $value;
 	}
 
-	public static function set($key, $var, $expire=0){
+	public static function set($key, $var, $expire=null){
 		if (!static::$adapter)
 			return;
+
+		if(is_null($expire)){
+			$expire = static::$options['expire'];
+		}
 
 		$key = static::get_namespace() . $key;
 		return static::$adapter->write($key, $var, $expire);
@@ -92,7 +96,6 @@ class Cache
 			return;
 
 		$key = static::get_namespace() . $key;
-
 		return static::$adapter->delete($key);
 	}
 
