@@ -878,7 +878,6 @@ class Model
 
 			$dirty = $this->dirty_attributes();
 			static::table()->update($dirty,$pk);
-
 			$this->invoke_callback('after_update',false);
             $this->update_cache();
         }
@@ -888,7 +887,7 @@ class Model
 
 	protected function update_cache(){
 		$table = static::table();
-		if($table->cache_model){
+		if($table->cache_individual_model){
 			Cache::set($this->cache_key(), $this, $table->cache_model_expire);
 		}
 	}
@@ -953,7 +952,6 @@ class Model
 
 		$values = $sql->bind_values();
 		$ret = $conn->query(($table->last_sql = $sql->to_s()), $values);
-
 		return $ret->rowCount();
 	}
 
@@ -1038,10 +1036,9 @@ class Model
 		return true;
 	}
 
-
 	public function remove_from_cache(){
 		$table = static::table();
-		if($table->cache_model){
+		if($table->cache_individual_model){
 			Cache::delete($this->cache_key());
 		}
 	}
@@ -1282,7 +1279,6 @@ class Model
 		$this->remove_from_cache();
 
 		$this->__relationships = array();
-
 		$pk = array_values($this->get_values_for($this->get_primary_key()));
 
 		$this->set_attributes_via_mass_assignment($this->find($pk)->attributes, false);
@@ -1613,6 +1609,26 @@ class Model
 	}
 
 	/**
+	 * Will look up a list of primary keys from cache
+	 *
+	 * @param array $pks An array of primary keys
+	 * @return array
+	 */
+	protected static function get_models_from_cache(array $pks){
+		$models = array();
+		$table = static::table();
+
+		foreach($pks as $pk){
+			$options =array('conditions'=> static::pk_conditions($pk));
+			$models[] = Cache::get($table->cache_key_for_model($pk), function() use ($table, $options){
+				$res = $table->find($options);
+				return $res?$res[0]:null;
+			}, $table->cache_model_expire);
+		}
+		return array_filter($models);
+	}
+
+	/**
 	 * Finder method which will find by a single or array of primary keys for this model.
 	 *
 	 * @see find
@@ -1625,16 +1641,9 @@ class Model
 	{
 		$table = static::table();
 
-		if($table->cache_model){
-            $pks=is_array($values)?$values:array($values);
-			foreach($pks as $pk){
-				$options['conditions'] = static::pk_conditions($pk);
-				$list[] = Cache::get($table->cache_key_for_model($pk), function() use ($table, $options){
-					$res = $table->find($options);
-					return $res?$res[0]:null;
-				}, $table->cache_model_expire);
-			}
-			$list = array_filter($list);
+		if($table->cache_individual_model){
+			$pks=is_array($values)?$values:array($values);
+			$list = static::get_models_from_cache($pks);
 		}
 		else{
 			$options['conditions'] = static::pk_conditions($values);

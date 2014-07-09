@@ -43,12 +43,12 @@ class Table
 	/**
 	 * Whether to cache individual models or not (not to be confused with caching of table schemas).
 	 */
-	public $cache_model;
+	public $cache_individual_model;
 
-    /**
-     * Expiration period for model caching.
-     */
-    public $cache_model_expire;
+	/**
+	 * Expiration period for model caching.
+	 */
+	public $cache_model_expire;
 
 	/**
 	 * A instance of CallBack for this model/table
@@ -241,7 +241,7 @@ class Table
 			$cb = function() use ($row, $self) {
 				return new $self->class->name($row,false,true,false);
 			};
-			if($this->cache_model){
+			if($this->cache_individual_model){
 				$key = $this->cache_key_for_model(array_intersect_key($row, array_flip($this->pk)));
 				$model = Cache::get($key, $cb, $this->cache_model_expire );
 			}
@@ -479,8 +479,13 @@ class Table
 			return;
 
 		$model_class_name = $this->class->name;
-		$this->cache_model = $model_class_name::$cache;
-		$this->cache_model_expire =  property_exists($model_class_name, 'cache_expire') && isset($model_class_name::$cache_expire)? $model_class_name::$cache_expire:Cache::$options['expire'];
+		$this->cache_individual_model = $model_class_name::$cache;
+		if(property_exists($model_class_name, 'cache_expire') && isset($model_class_name::$cache_expire)){
+			$this->cache_model_expire =  $model_class_name::$cache_expire;
+		}
+		else{
+			$this->cache_model_expire = Cache::$options['expire'];
+		}
 	}
 
 	private function set_sequence_name()
