@@ -1651,15 +1651,16 @@ class Model
 		}
 		$results = count($list);
 
-		if ($results != ($expected = count($values)))
+		$expected = count($values);
+		if ($results==0 || $results != $expected)
 		{
 			$class = get_called_class();
 
+			if (!is_array($values))
+				$values = array($values);
+
 			if ($expected == 1)
 			{
-				if (!is_array($values))
-					$values = array($values);
-
 				throw new RecordNotFound("Couldn't find $class with ID=" . join(',',$values));
 			}
 

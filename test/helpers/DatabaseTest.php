@@ -1,4 +1,5 @@
 <?php
+use ActiveRecord\Cache;
 require_once __DIR__ . '/DatabaseLoader.php';
 
 class DatabaseTest extends SnakeCase_PHPUnit_Framework_TestCase
@@ -8,6 +9,7 @@ class DatabaseTest extends SnakeCase_PHPUnit_Framework_TestCase
 
 	public function set_up($connection_name=null)
 	{
+		Cache::initialize('memcache://localhost');
 		ActiveRecord\Table::clear_cache();
 
 		$config = ActiveRecord\Config::instance();
